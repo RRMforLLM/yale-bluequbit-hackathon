@@ -1,0 +1,180 @@
+
+🔧 Getting Started
+Bluequbit SDK allows you to use your favorite quantum libs such as qiskit and cirq to construct circuits and run them on large CPU / GPU and even QPU machines in the cloud.
+
+And all you need is only 3 lines of bluequbit code!
+
+First install the BlueQubit SDK:
+
+pip install bluequbit
+Once you open a (free) account at app.bluequbit.io you will get a unique token. You can see it in the top right corner in the app.
+
+You can now use your token to submit quantum jobs to BlueQubit!
+
+import bluequbit
+...
+# building the qiskit_circuit
+...
+bq = bluequbit.init("YOUR_TOKEN_HERE")
+result = bq.run(qiskit_circuit, device='gpu') # device can also be 'cpu' or 'quantum'
+📝 API Reference
+See official SDK docs for more details.
+
+⚛️ What is Quantum?
+Quantum Computing is fundamentally different than classical computing because it uses concepts such as superposition and entanglement.  This allows quantum computers to be exponentially more powerful.
+
+The building block of classical computers are bits - 0s and 1s. In the quantum world their counterpart is qubits - quantum bits.
+
+✅ Superposition allows qubits to be both 0 and 1 at the same time
+✅ Entanglement allows qubits to interact with each other in “magical” ways and thus perform computation
+The rest is pretty similar - quantum computers use algorithms just like classical computers to solve problems, except sometimes they can do so much faster 💡
+
+While on classical computers we use logical gates such as AND, OR, NOT - in the qubit world we use quantum gates such as NOT, CNOT, H to create quantum algorithms. 
+
+✅ The NOT gate is exactly the same - it just flips a qubit (or a bit). 
+✅ The CNOT gate flips the second qubit (target) if the first qubit (control) is 1
+✅ The H gate (aka Hadamard) puts a qubit in a superposition of 0 and 1. 
+There is also the concept of measurement : putting a qubit in a superposition of 0 and 1 then measuring it is like tossing a coin - you get either 0 or 1.
+
+Below is an example of using the H gate to perform 4 coin tosses 👇
+
+▶️ Examples
+🚀 QUANTUM Coin Toss
+Here we build a circuit (quantum algorithm) that does 4 coin tosses on a Quantum Computer. 
+
+Instead of heads and tails we deal with 0s and 1s: there are 16 possibilities, and each time we measure the quantum state we get one of these possibilities. 
+
+
+🔁
+✅ Device is online now
+The quantum device is available 24/7:
+
+Mon-Sun: 12:00 AM - 11:59 PM (All day)
+
+When you click the button above - this is the code that is generated and submitted to an actual quantum device 👇
+
+import bluequbit
+from qiskit import QuantumCircuit
+
+qc_qiskit = QuantumCircuit(4)
+qc_qiskit.h(0)
+qc_qiskit.h(1)
+qc_qiskit.h(2)
+qc_qiskit.h(3)
+qc_qiskit.measure_all()
+
+bq = bluequbit.init("YOUR_TOKEN_HERE")
+result = bq.run(qc_qiskit, device='quantum', shots=100) # <-- Quantum Magic
+print(result.get_counts())
+As you can see with the Bluequbit SDK all you need to run a quantum program is to provide  device='quantum'!
+
+👉 A + B
+Many people think Quantum Computers can only do very sophisticated computations. However something as simple as doing A+B can be done Quantumly. The nice part is that in the quantum case both A and B can be in a superposition of many numbers - hence A+B will also be a superposition!
+
+This concept can be used to add distributions. 
+
+We will use multi_adder function from bluequbit.library, which builds a qiskit circuit to add m qubit registers, each having n qubits. After applying the circuit, the total sum will be in the last register.
+
+Below the four 3-qubit registers are in superposition of 2³ numbers each, i.e. each is a uniform distribution with 8 values. 
+
+Adding them all up gets us pretty close to a Normal Distribution 👇
+
+
+✅ BUILDING THE QISKIT CIRCUIT
+
+import bluequbit
+from bluequbit.library import multi_adder
+from qiskit import QuantumCircuit
+from math import ceil, log2
+
+m = 4 # number of registers
+n = 3 # number of qubits in each register
+
+num_sum_qubits = int(ceil(log2(m * (2**n - 1) + 0.5)))  # number of qubits required to store the sum
+num_qubits = m * n + num_sum_qubits - n
+
+qc_qiskit = QuantumCircuit(num_qubits, num_sum_qubits)
+qc_qiskit.h(range(m * n))  # Now each register is in superposition of 0, 1, 2, 3, 4, 5, 6, 7
+qc_qiskit.compose(multi_adder(m, n), inplace=True)
+qc_qiskit.measure(range(num_qubits-num_sum_qubits, num_qubits), range(num_sum_qubits))
+✅ RUNNING ON BLUEQUBIT
+
+bq = bluequbit.init("YOUR_TOKEN_HERE")
+result = bq.run(qc_qiskit)
+print(result.get_counts())
+Once you sign up and get your token you can experiment with higher qubits or add more uniform distributions 🚀
+
+👉 Run QFT
+Here is an example on how to run Quantum Fourier Transform on BlueQubit:
+
+import bluequbit
+from qiskit.circuit.library import QFT
+
+qft_circuit = QFT(num_qubits=5)
+qft_circuit.measure_all()
+
+bq = bluequbit.init("YOUR_TOKEN_HERE")
+result = bq.run(qft_circuit, job_name="QFT on CPU")
+print(result.get_counts())
+🛠️ Devices
+Below are the supported devices (simulators and quantum hardware) at BlueQubit:
+
+SDK Device name	Max Qubits	Price	SUBSCRIPTIONS (Standard/Premium/Team)	Description
+device='cpu'	34	FREE*	Unlimited	Statevector Simulator based on Google’s qsim library
+device='gpu'	35	$3/hour	—	GPU Statevector Simulator based on Nvidia cuQuantum
+device='quantum'	82	$0.3 + $0.0009/shot	—	Rigetti Ankaa-3 quantum computer
+device='mps.cpu'	96	FREE**	Unlimited	MPS Simulator based on Quimb library, on CPUs
+device='mps.gpu'	96	$3/hour	—	MPS Simulator based on Quimb library, on GPUs
+device='pauli-path.cpu'	192	FREE**	Unlimited	Pauli Path Simulator using coefficient based Pauli propagation (CPU-based)
+device='pauli-path.gpu'	192	$3/hour	—	Pauli Path Simulator using coefficient based Pauli propagation (GPU-based)
+* For cpu jobs there are limits of 50k jobs / day and 60min per job.
+
+** For mps.cpu and paulit-path.cpu jobs there are limits of 1k jobs/day and 15 min per job. After that its $1/hour, with min $0.2.
+
+
+Check out our SDK docs examples for more detailed code snippets on how to use these devices 🚀
+
+💻 Hybrid Notebooks
+Notebook Type	Price	Subscription Access	Specs
+SMALL	$1/hour	Unlimited (any subscription)	General purpose, lightweight workloads
+LARGE	$5/hour	Unlimited (Premium or Team)	More compute and memory
+HIGHMEMORY	$8/hour	Pay as you go	High-RAM workloads
+GPU A100 80GB	$7.50/hour	Pay as you go	NVIDIA A100, large-scale GPU compute
+GPU H100 94GB	$17/hour	Pay as you go	NVIDIA H100, top-tier GPU performance
+
+💰Pricing
+Check out our pricing page for the full info.
+
+If you need credits for your research / academic project - drop us an email at credits@bluequbit.io!
+
+🕗 Large Circuits
+⏳ Estimation
+Before submitting a job to our GPU-accelerated simulator and incurring charges you can get an estimate of the runtime and cost for your quantum circuit using  bq.estimate(qc_qiskit).  This option is available for device='cpu'  and device='gpu'.
+
+If you want to run very large experiments or you need more credits for your research project - just drop us an email at credits@bluequbit.io!
+
+📚 Example scenarios
+Here are some examples of how much you will be charged for different scenarios👇
+
+✅ Default CPU simulator
+You submit a circuit with ≤34 qubits and do not specify a device. We use our default CPU simulator that is free of charge.
+
+Cost: $0
+
+✅ GPU simulator 35 qubits
+You submit a circuit with 35 qubits and specify device='gpu'. 
+
+Assume this experiment takes 20 minutes to run. 
+
+We will use 4 GPUs for this, each at $3/hour rate, so overall you will incur $4.
+
+Cost: $4
+
+✅ Quantum Device
+You submit a circuit with up to 82 qubits and specify device='quantum'. 
+
+You also specify shots=10000.  Using the $0.3 + $0.0009 / shot formula we get 👇
+
+Cost: $9.3
+
+ 
